@@ -118,12 +118,26 @@ Now write a bash script which repeats the following cycle of steps for 99 times:
 
 **Your answer:**
 
+The size of the folder using `du -h -s git_experiment/` is 3M while the sum of the sizes of each file inside it using `ls -l -h -a` is 96K. This is because for 100 iterations, `edit_and_commit.sh` commits the tex source file to its git so that git should follow all updates using the log file. 
+
+```
+total 96K
+drwxr-x--- 3 jchoi users    8 Feb 13 17:54 .
+drwxr-x--- 3 jchoi users    5 Feb 13 17:46 ..
+drwxr-x--- 8 jchoi users   13 Feb 13 17:54 .git
+-rw-r----- 1 jchoi users  226 Feb 13 17:52 edit_and_commit.sh
+-rw-r----- 1 jchoi users    8 Feb 13 17:54 foo.aux
+-rw-r----- 1 jchoi users 2.9K Feb 13 17:54 foo.log
+-rw-r----- 1 jchoi users  27K Feb 13 17:54 foo.pdf
+-rw-r----- 1 jchoi users  128 Feb 13 17:54 foo.tex
+```
+
+This explains why Github discourages users from committing large binary files. Every time they commit binary files, memory requires a lot more space for following histories in their history or log files. 
+
 ## Things to commit and submit
 
 1. Completed `edit_and_commit.sh`
 2. Answer to the question above
-
-
 
 # Exercise 2: Setting up an R package skeleton
 
