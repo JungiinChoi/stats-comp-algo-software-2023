@@ -30,13 +30,19 @@ Try it and see what you get.
 Does the estimate make sense? If not, why?
 How does the estimate change if you change the seed?
 
-**Answer**
+**Answer:**
+
+I got 10000000000 and 99999999999592366080 for the sample mean and sample second moment, respectively. The estimate for sample variance is -147456 which does not make sense because sample variance should be non-negative. 
+
+This is because the computer makes an error when calculating the second moment of $\theta$-- which has a value of $10^{20}$-- because it has 52 binary digits of precision. Thus, the error will be $\frac{10^{20}}{2^{52}} \approx 10^4$, which is much larger than the true variance, 1. This leads to a large error in estimating the second moment, and the sample variance of $\theta$.
 
 
 **Bonus question:** 
 What is, roughly speaking, the distribution of the estimator `sample_var_with_question_mark` under repeated Monte Carlo simulations (i.e. without a fixed seed)?
 
-**Answer**
+**Answer:**
+
+Because sample variance is computed with error caused by machine accuracy($\approx 10^4$), but true value with 1, it will **roughly** normally distributed with mean 1 and standard deviation of scale $10^4$. 
 
 ```{r}
 set.seed(140778)
@@ -118,6 +124,12 @@ Does the relative error plot agree with what the mathematical theory predicts? E
 Also, what is the slope in the "latter part" of your plotted line, roughly speaking? 
 Explain why we observe such a slope in the relative error. 
 (Hint: Consider a machine with 10 decimal digits of accuracy. What happens if we numerically differentiate $f(x) = x$ at $x = 1$ with $\Delta x = 0.1, 0.01, 0.001, \ldots$.)
+
+**Answer:**
+
+Because $\frac{f(x+\Delta x) - f(x-\Delta x)}{2 \Delta x} \approx f'(x) + O((\Delta x)^2)$, we expect the slope of 2. But here, since the x-axis (log2(stepsize)) value decreases as the graph goes right, we expect the slope of -2. 
+
+The relative error plot agrees with what the mathematical theory predicts until $log(\Delta x) \approx -17$. This is because if $\epsilon = 2^{-52}$ is relative accuracy of machine, when difference between $f(x+\Delta x) - f(x-\Delta x)$ is too small, error term is determined by $(O(\Delta x^3)+eps)/\Delta x$. Thus, when $dx^3 << eps$, error will be determined by $eps / \Delta x$. So the slope of the error plot changes as $\Delta x$ gets smaller than $2^{-52/3} = 2^{-17}$
 
 ## Part B: Extention to multivariate functions
 
