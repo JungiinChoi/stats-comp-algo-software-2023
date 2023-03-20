@@ -25,12 +25,16 @@ cat(readLines(file.path("src", "inner_prod.cpp")), sep = '\n')
 Ignoring the bug for the moment, run the code below and see what you get.
 
 ```{r, eval=FALSE}
-Rcpp::sourceCpp(file.path("src", "inner_prod.cpp"))
+inner_c <- c()
+for (i in 1:1000){
+  Rcpp::sourceCpp(file.path("src", "inner_prod.cpp"))
+  vec_size <- 1023L
+  v <- rep(1, vec_size)
+  w <- rep(1, vec_size)
+  inner_c <- c(inner_c, inner_prod(v, w))
+}
 
-vec_size <- 1023L
-v <- rep(1, vec_size)
-w <- rep(1, vec_size)
-inner_prod(v, w)
+table(inner_c)
 ```
 
 Still ignoring the bug, run the code below that calculates the same inner product many times and checks whether the output remains the same.
@@ -53,6 +57,15 @@ for (i in 1:10^6) {
 
 **Questions:**
 What behavior do you observe above? How do you explain it?
+
+
+**Answer:**
+
+For Rcpp implementation, 971 out of 1000 returned 1022 while the other 29 out of 1000 were way far from 1022 (e.g. -8.7e+245, 8.2e+193, etc). 
+
+In R base implementation, they also disagree because the majority of the dot product results were NaN. 
+
+In Rcpp, index starts from 0 while R uses 1-starting index system. This makes difference when they store vectors from initial index for each language and thus results in inconsistency of dot product.  
 
 
 ## Part B: Sloppy matrix-matrix multiplication
@@ -79,6 +92,10 @@ dgemm_eigen(A, B)
 
 **Questions:**
 What do you get as an output? What if you re-run the code chunk? Explain the observed behavior.
+
+**Answer:**
+
+The first column always gives 1024 for all rows. But, the second row gives different values every time I run this code chunk.  
 
 ## Part C: Consequence of "tresspassing"
 
@@ -113,6 +130,9 @@ Running the same piece of code from an R console (instead of an RStudio session)
 * Why does the second code chunk run fine?
 * Modify `axpy_c.cpp` to make the function safer to use.
 
+**Answer:**
+R session is aborted when I run the first code chunk and second code chunk works well by returning expected results. This is because `x` is longer than `y`. This causes the function to write data outside the memory reserved for the "y" vector, which can cause errors in the program. The second code chunk works properly because the function is only applied to the first 1000 elements of "y". However, this is not what one would expect from a vector-scalar product, which should only be applied to vectors of the same length. To make the `axpy_c()` function safe, we should add a check at the beginning of the function to make sure that "x" and "y" are the same length.
+
 
 # Exercise 3: Multiplying two matrices ain't quite what you learned in your linear algebra class
 
@@ -140,7 +160,9 @@ B <- matrix(rnorm(n_inner * n_col_out), nrow = n_inner, ncol = n_col_out)
 ```
 
 ```{r}
-# Check the output of `row_col_dot_matmat`
+row_col_AB = row_col_dot_matmat(A, B)
+base_AB = A %*% B
+are_all_close(Rcpp_AB, base_AB)
 ```
 
 ## Part B: Going one step beyond your linear algebra class
@@ -152,15 +174,27 @@ Then compare performances of `row_col_dot_matmat` and `col_oriented_matmat` (but
 Which one is faster and why?
 
 ```{r}
-# Check and benchmark
+col_oriented_AB = col_oriented_matmat(A, B)
+are_all_close(col_oriented_AB, row_col_AB)
+
+bench::mark(row_col_dot_matmat(A, B))
+bench::mark(col_oriented_matmat(A, B))
 ```
+
+**Answer:**
+
+Column-oriented matrix-vector multiplication is much faster than the standard way of multiplying them by rows and columns. The reason for this is that when we use column-oriented calculation, the required data is more likely to be in cache compare to standard multiplication, reducing the time it takes to access the data. 
 
 Also compare with performance of the matrix-matrix multiplication via `%*%` in R, which uses whatever the BLAS library your R was configured with.
 (You can find out which BLAS library R is using via `sessionInfo()` or `extSoftVersion()`.) 
 
 ```{r}
-# Fill in
+bench::mark(A %*% B)
+bench::mark(col_oriented_matmat(A, B))
 ```
+
+**Answer:**
+Although the column-oriented matrix-vector multiplication is significantly faster than the standard row-column method, its performance is closer to the built-in BLAS library. 
 
 When benchmarking alternative implementations (or alternative algorithms, more generally), keep in mind that the relative performance depends significantly on the size of a test problem.
 It is important, therefore, to benchmark your implementation/algorithm on problems of realistic size. 
